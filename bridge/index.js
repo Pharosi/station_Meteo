@@ -6,7 +6,7 @@ const MQTT_BROKER = "mqtt://captain.dev0.pandor.cloud:1884";
 const WEBSOCKET_PORT = 8080;
 
 // Définition DEVICE_ID
-const DEVICE_ID = "genders-01";
+const DEVICE_ID = "Mazafakas-01";
 
 // Convention TP : classroom/<device_id>/telemetry
 const TELEMETRY_TOPIC = `classroom/${DEVICE_ID}/telemetry`;
