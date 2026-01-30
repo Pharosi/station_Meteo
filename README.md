@@ -89,6 +89,13 @@ http://localhost:5173
 
 ## ESP32
 
+### Installation de la librairie DHT22
+
+Dans Arduino IDE, installer via le Library Manager (Sketch → Include Library → Manage Libraries) :
+
+1. **DHT sensor library** by Adafruit
+2. **Adafruit Unified Sensor** (dépendance automatique)
+
 - Ouvrir esp32/station.ino dans Arduino IDE
 - Configurer le Wi-Fi
 - Flasher l’ESP32
@@ -104,10 +111,10 @@ Exemple de message MQTT :
 
 {
   "device_id": "genders-01",
+  "mode": "sim",
   "unit": "C",
   "temp": 22.4,
   "hum": 45.2,
-  "batteryPct": 18
 }
 
 ---

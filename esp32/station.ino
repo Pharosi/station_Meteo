@@ -1,4 +1,8 @@
 #include <DHT.h>
+#include <WiFi.h>
+
+const char* SSID = "iPhone de Yann A. N'DA";
+const char* PASSWORD = "y@nnwifi";
 
 #define DHTPIN 3
 #define DHTTYPE DHT22
@@ -24,8 +28,18 @@ void setup() {
   pinMode(LEDPIN_4, OUTPUT);
   pinMode(BUTTONPIN_12, INPUT_PULLUP);
   dht.begin();
+  WiFi.begin(SSID, PASSWORD);
   Serial.begin(115200);
 
+  while (Wifi.status() != WL_CONNECTED) {
+    Serial.println("Connexion au WiFi...");
+    delay(1000);
+  }
+
+  Serial.println("\nConnexion au WiFi réussie");
+
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 
   digitalWrite(LEDPIN_5, HIGH);
   digitalWrite(LEDPIN_4, LOW);
