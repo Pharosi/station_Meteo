@@ -10,6 +10,7 @@ const DEVICE_ID = "genders-01";
 
 // Convention TP : classroom/<device_id>/telemetry
 const TELEMETRY_TOPIC = `classroom/${DEVICE_ID}/telemetry`;
+const COMMAND_TOPIC = `classroom/${DEVICE_ID}/command`;
 // ==========================================
 
 const clientMQTT = mqtt.connect(MQTT_BROKER, {
@@ -97,6 +98,28 @@ serveurWebSocket.on("connection", (ws) => {
       at: Date.now(),
     })
   );
+
+  // Gestion des messages du client WebSocket (frontend)
+  ws.on("message", (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      
+      // Si c'est une commande de changement de mode
+      if (data.type === "command" && data.command === "changeMode") {
+        const payload = JSON.stringify({ mode: data.mode });
+        
+        clientMQTT.publish(COMMAND_TOPIC, payload, (err) => {
+          if (err) {
+            console.error("❌ Erreur d'envoi de commande MQTT:", err.message);
+          } else {
+            console.log(`📤 Commande envoyée: ${COMMAND_TOPIC} | ${payload}`);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("❌ Erreur de parsing du message WebSocket:", error.message);
+    }
+  });
 
   ws.on("close", () => {
     const index = clientsWebSocket.indexOf(ws);

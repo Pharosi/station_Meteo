@@ -129,11 +129,10 @@ Librairie utilisé pour le projet : https://github.com/adafruit/DHT-sensor-libra
 ---
 
 # 👥 Équipe
-
-- Nom Prénom
-- Nom Prénom
-- Nom Prénom
-
----
+Raphael Paes
+Kelian Halleray
+Ian N'Da
+Owen Lambert
+Modestin Hounga
 
 Projet pédagogique — HETIC WEB3

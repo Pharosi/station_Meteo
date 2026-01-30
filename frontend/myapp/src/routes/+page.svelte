@@ -2,8 +2,8 @@
     const URL_WEBSOCKET = "ws://localhost:8080";
     const TIMEOUT_OFFLINE = 60000; // 60 secondes sans données
     
-    // Mapping deviceId 
     const LIEUX = {
+        'genders-01': 'Station Météo DHT22',
         'esp32-01': 'Paris',
         'esp32-02': 'Lyon',
         'esp32-03': 'Marseille',
@@ -12,17 +12,20 @@
         'esp32-06': 'Hetic'
     };
 
-    // État de la connexion WebSocket
-    let statutConnexion = "déconnecté";
+    let statutConnexion = $state("déconnecté");
     
-    // Stockage des données de chaque station 
+    let modeAffichage = $state('C'); // 'C' ou 'F'
+    
     let stations = $state({});
+    
+    let wsConnection = null;
     
     // Connexion au WebSocket
     function connecter() {
         statutConnexion = "connexion...";
 
         const ws = new WebSocket(URL_WEBSOCKET);
+        wsConnection = ws;
 
         ws.onopen = () => {
             statutConnexion = "connecté";
@@ -35,26 +38,30 @@
 
         ws.onclose = () => {
             statutConnexion = "déconnecté";
-            // Tenter de reconnecter après 3 secondes
             setTimeout(connecter, 3000);
         }
 
         ws.onmessage = (event) => {
             try {
                     const message = JSON.parse(event.data);
+                    console.log("Message WebSocket reçu:", message);
 
                     const deviceId = message.deviceId ?? message.data?.device_id ?? "unknown";
                     const donnees = message.data ?? {};
 
-                    // ✅ Supporte tempC OU temp
                     const temp = donnees.tempC ?? donnees.temp;
                     const hum = donnees.humPct ?? donnees.hum;
 
-                    // ✅ Convertit en nombre (évite NaN si string)
                     const temperature = temp !== undefined ? Number(temp) : null;
                     const humidite = hum !== undefined ? Number(hum) : null;
 
-                    // ✅ Batterie optionnelle
+                    const unit = donnees.unit ?? "°C";
+                    const mode = donnees.mode ?? "C";
+
+                    if (mode) {
+                        modeAffichage = mode;
+                    }
+
                     const batterie = donnees.batteryPct !== undefined ? Number(donnees.batteryPct) : 100;
 
                     stations[deviceId] = {
@@ -62,39 +69,69 @@
                     temperature,
                     humidite,
                     batterie,
+                    unit,
+                    mode,
                     derniereMAJ: Date.now(),
                     deviceId
                 };
 
-                console.log(`${stations[deviceId].lieu}: ${temperature ?? "?"}°C`);
+                console.log(`Station mise à jour: ${stations[deviceId].lieu} - ${temperature ?? "?"}${unit} - ${humidite ?? "?"}%`);
+                console.log("Stations actuelles:", $state.snapshot(stations));
             } catch (error) {
                 console.error("Erreur parsing:", error);
             }
         };
     }
 
-    // Vérifier si une station est en ligne
     function estEnLigne(station) {
         if (!station || !station.derniereMAJ) return false;
         return (Date.now() - station.derniereMAJ) < TIMEOUT_OFFLINE;
     }
 
-    // Calculer la moyenne de température
     function moyenneTemperature() {
         const stationsEnLigne = Object.values(stations).filter(estEnLigne);
         if (stationsEnLigne.length === 0) return null;
         
-        const somme = stationsEnLigne.reduce((acc, s) => acc + s.temperature, 0);
-        return (somme / stationsEnLigne.length).toFixed(1);
+        const somme = stationsEnLigne.reduce((acc, s) => acc + (s.temperature || 0), 0);
+        const moyenneC = somme / stationsEnLigne.length;
+        return convertirTemp(moyenneC);
     }
 
-    // Calculer la moyenne d'humidité
     function moyenneHumidite() {
         const stationsEnLigne = Object.values(stations).filter(estEnLigne);
         if (stationsEnLigne.length === 0) return null;
         
-        const somme = stationsEnLigne.reduce((acc, s) => acc + s.humidite, 0);
+        const somme = stationsEnLigne.reduce((acc, s) => acc + (s.humidite || 0), 0);
         return (somme / stationsEnLigne.length).toFixed(1);
+    }
+
+    function getUniteActuelle() {
+        return modeAffichage === 'C' ? '°C' : '°F';
+    }
+
+    function convertirTemp(tempC) {
+        if (tempC === null || tempC === undefined) return null;
+        if (modeAffichage === 'F') {
+            return (tempC * 9/5 + 32).toFixed(1);
+        }
+        return Number(tempC).toFixed(1);
+    }
+
+    function toggleMode() {
+        const nouveauMode = modeAffichage === 'C' ? 'F' : 'C';
+        modeAffichage = nouveauMode;
+        
+        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+            const commande = {
+                type: "command",
+                command: "changeMode",
+                mode: nouveauMode
+            };
+            wsConnection.send(JSON.stringify(commande));
+            console.log(`Commande envoyée: changement de mode vers ${nouveauMode}`);
+        } else {
+            console.warn("WebSocket non connecté, impossible d'envoyer la commande");
+        }
     }
 
     function classeBatterie(pct) {
@@ -111,8 +148,14 @@
 <main>
     <header>
         <h1>🌦️ Stations Météo IoT</h1>
-        <div class="statut-connexion {statutConnexion === 'connecté' ? 'connecte' : ''}">
-            {statutConnexion === 'connecté' ? '🟢' : '🔴'} {statutConnexion}
+        <div class="header-controls">
+            <div class="statut-connexion {statutConnexion === 'connecté' ? 'connecte' : ''}">
+                {statutConnexion === 'connecté' ? '🟢' : '🔴'} {statutConnexion}
+            </div>
+            <button class="toggle-mode" onclick={toggleMode}>
+                {modeAffichage === 'C' ? '🌡️ Celsius' : '🌡️ Fahrenheit'}
+                <span class="toggle-icon">⇄</span>
+            </button>
         </div>
     </header>
 
@@ -121,14 +164,14 @@
             <div class="moyenne-item">
                 <span class="icone">🌡️</span>
                 <div>
-                    <div class="label">Température moyenne</div>
-                    <div class="valeur">{moyenneTemperature() ?? '--'}°C</div>
+                    <div class="label">Température {Object.keys(stations).length > 1 ? 'moyenne' : 'actuelle'}</div>
+                    <div class="valeur">{moyenneTemperature() ?? '--'}{getUniteActuelle()}</div>
                 </div>
             </div>
             <div class="moyenne-item">
                 <span class="icone">💧</span>
                 <div>
-                    <div class="label">Humidité moyenne</div>
+                    <div class="label">Humidité {Object.keys(stations).length > 1 ? 'moyenne' : 'actuelle'}</div>
                     <div class="valeur">{moyenneHumidite() ?? '--'}%</div>
                 </div>
             </div>
@@ -141,9 +184,16 @@
             <article class="carte-station {enLigne ? 'online' : 'offline'}">
                 <div class="en-tete">
                     <h2>{station.lieu}</h2>
-                    <span class="badge-statut">
-                        {enLigne ? '🟢 En ligne' : '🔴 Hors ligne'}
-                    </span>
+                    <div class="badges">
+                        {#if station.mode}
+                            <span class="badge-mode">
+                                {station.mode === 'C' ? '🌡️ Celsius' : '🌡️ Fahrenheit'}
+                            </span>
+                        {/if}
+                        <span class="badge-statut">
+                            {enLigne ? '🟢 En ligne' : '🔴 Hors ligne'}
+                        </span>
+                    </div>
                 </div>
                 
                 <div class="mesures">
@@ -151,7 +201,7 @@
                         <span class="icone">🌡️</span>
                         <div>
                             <div class="label">Température</div>
-                            <div class="valeur-principale">{station.temperature}°C</div>
+                            <div class="valeur-principale">{convertirTemp(station.temperature) ?? '--'}{getUniteActuelle()}</div>
                         </div>
                     </div>
                     
@@ -159,17 +209,10 @@
                         <span class="icone">💧</span>
                         <div>
                             <div class="label">Humidité</div>
-                            <div class="valeur">{station.humidite}%</div>
+                            <div class="valeur">{station.humidite ?? '--'}%</div>
                         </div>
                     </div>
                     
-                    <div class="mesure">
-                        <span class="icone {classeBatterie(station.batterie)}">🔋</span>
-                        <div>
-                            <div class="label">Batterie</div>
-                            <div class="valeur">{station.batterie}%</div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="pied">
@@ -216,6 +259,14 @@
         text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
     }
 
+    .header-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
     .statut-connexion {
         display: inline-block;
         padding: 0.5rem 1.5rem;
@@ -229,6 +280,41 @@
 
     .statut-connexion.connecte {
         background: rgba(76, 175, 80, 0.3);
+    }
+
+    .toggle-mode {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+        color: white;
+        border: none;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .toggle-mode:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+
+    .toggle-mode:active {
+        transform: translateY(0);
+    }
+
+    .toggle-icon {
+        font-size: 1.2rem;
+        display: inline-block;
+        transition: transform 0.3s ease;
+    }
+
+    .toggle-mode:hover .toggle-icon {
+        transform: rotate(180deg);
     }
 
     /* Moyennes globales */
@@ -305,12 +391,28 @@
         color: #333;
     }
 
+    .badges {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
     .badge-statut {
         font-size: 0.75rem;
         padding: 0.4rem 0.8rem;
         border-radius: 1rem;
         background: #e8f5e9;
         color: #2e7d32;
+        font-weight: 600;
+    }
+
+    .badge-mode {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 1rem;
+        background: #e3f2fd;
+        color: #1565c0;
         font-weight: 600;
     }
 
