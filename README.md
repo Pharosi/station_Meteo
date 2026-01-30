@@ -104,11 +104,10 @@ Exemple de message MQTT :
 
 {
   "device_id": "genders-01",
-  "mode": "oui",
   "unit": "C",
   "temp": 22.4,
   "hum": 45.2,
-  "ts": 1769698000
+  "batteryPct": 18
 }
 
 ---
