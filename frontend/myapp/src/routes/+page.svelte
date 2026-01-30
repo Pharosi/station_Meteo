@@ -1,6 +1,6 @@
 <script>
     const URL_WEBSOCKET = "ws://localhost:8080";
-    const TIMEOUT_OFFLINE = 60000; // 60 secondes sans données
+    const TIMEOUT_OFFLINE = 60000;
     
     const LIEUX = {
         'genders-01': 'Station Météo DHT22',
@@ -14,13 +14,20 @@
 
     let statutConnexion = $state("déconnecté");
     
+<<<<<<< HEAD
     let modeAffichage = $state('C'); // 'C' ou 'F'
+=======
+    let modeAffichage = $state('C');
+>>>>>>> 8b455b6 (Test Finaux avec button qui marche dans un sens (X Front -> Material))
     
     let stations = $state({});
     
     let wsConnection = null;
     
+<<<<<<< HEAD
     // Connexion au WebSocket
+=======
+>>>>>>> 8b455b6 (Test Finaux avec button qui marche dans un sens (X Front -> Material))
     function connecter() {
         statutConnexion = "connexion...";
 
@@ -49,12 +56,22 @@
                     const deviceId = message.deviceId ?? message.data?.device_id ?? "unknown";
                     const donnees = message.data ?? {};
 
+<<<<<<< HEAD
+=======
+                    if (donnees.source === "button" && donnees.mode) {
+                        modeAffichage = donnees.mode;
+                        console.log(`🔘 Bouton physique pressé - Mode changé vers ${donnees.mode === 'C' ? 'Celsius' : 'Fahrenheit'}`);
+                        return;
+                    }
+
+>>>>>>> 8b455b6 (Test Finaux avec button qui marche dans un sens (X Front -> Material))
                     const temp = donnees.tempC ?? donnees.temp;
                     const hum = donnees.humPct ?? donnees.hum;
 
                     const temperature = temp !== undefined ? Number(temp) : null;
                     const humidite = hum !== undefined ? Number(hum) : null;
 
+<<<<<<< HEAD
                     const unit = donnees.unit ?? "°C";
                     const mode = donnees.mode ?? "C";
 
@@ -62,6 +79,8 @@
                         modeAffichage = mode;
                     }
 
+=======
+>>>>>>> 8b455b6 (Test Finaux avec button qui marche dans un sens (X Front -> Material))
                     const batterie = donnees.batteryPct !== undefined ? Number(donnees.batteryPct) : 100;
 
                     stations[deviceId] = {
@@ -69,8 +88,6 @@
                     temperature,
                     humidite,
                     batterie,
-                    unit,
-                    mode,
                     derniereMAJ: Date.now(),
                     deviceId
                 };
@@ -128,9 +145,15 @@
                 mode: nouveauMode
             };
             wsConnection.send(JSON.stringify(commande));
+<<<<<<< HEAD
             console.log(`Commande envoyée: changement de mode vers ${nouveauMode}`);
         } else {
             console.warn("WebSocket non connecté, impossible d'envoyer la commande");
+=======
+            console.log(`📤 Commande envoyée à l'Arduino: mode ${nouveauMode}`);
+        } else {
+            console.warn("⚠️ WebSocket non connecté, impossible d'envoyer la commande");
+>>>>>>> 8b455b6 (Test Finaux avec button qui marche dans un sens (X Front -> Material))
         }
     }
 
@@ -232,7 +255,6 @@
 </main>
 
 <style>
-    /* styliser grâce à l'ia */
     :global(body) {
         margin: 0;
         padding: 0;
@@ -317,7 +339,6 @@
         transform: rotate(180deg);
     }
 
-    /* Moyennes globales */
     .moyennes {
         display: flex;
         gap: 1.5rem;
@@ -351,7 +372,6 @@
         color: #333;
     }
 
-    /* Grille des stations */
     .grille-stations {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -453,18 +473,6 @@
         font-size: 2rem;
         font-weight: bold;
         color: #667eea;
-    }
-
-    .batterie-ok {
-        filter: grayscale(0);
-    }
-
-    .batterie-moyen {
-        filter: hue-rotate(45deg);
-    }
-
-    .batterie-faible {
-        filter: hue-rotate(0deg) saturate(2);
     }
 
     .pied {
