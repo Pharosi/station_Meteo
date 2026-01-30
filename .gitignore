@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+
+# SvelteKit / Vite
+.svelte-kit/
+build/
+dist/
+.vite/
+
+# Arduino / IDE
+*.elf
+*.hex
+
+# Logs
+*.log
