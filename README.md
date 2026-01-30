@@ -43,21 +43,45 @@ station-meteo/
 
 # 🚀 Lancement
 
-## Démarrage
+## Bridge (Node.js)
 
-### Lancer le bridge (Terminal 1)
+### Installation des dépendances (une seule fois)
+
 ```bash
-cd bridge
-node index.js
+cd bridge  
+npm install mqtt ws
+``` 
+
+### Démarrage du bridge
+
+```bash
+node index.js  
 ```
 
+WebSocket disponible sur :
 
+ws://localhost:8080
 
-### Lancer le front (Terminal 2)
+---
+
+## Frontend (SvelteKit)
+
+### Installation des dépendances (une seule fois)
+
 ```bash
-cd front/myapp
-npm run dev
+cd frontend/myapp  
+npm install
 ```
+
+### Démarrage du frontend
+
+```bash
+npm run dev  
+```
+
+Interface web accessible sur :
+
+http://localhost:5173
 
 ⚠️ Le bridge doit être lancé avant le frontend.
 
