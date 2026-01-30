@@ -41,25 +41,36 @@
 
         ws.onmessage = (event) => {
             try {
-                const message = JSON.parse(event.data);
-                const deviceId = message.deviceId;
-                const donnees = message.data;
-                
-                // Mettre à jour les données de la station
-                stations[deviceId] = {
+                    const message = JSON.parse(event.data);
+
+                    const deviceId = message.deviceId ?? message.data?.device_id ?? "unknown";
+                    const donnees = message.data ?? {};
+
+                    // ✅ Supporte tempC OU temp
+                    const temp = donnees.tempC ?? donnees.temp;
+                    const hum = donnees.humPct ?? donnees.hum;
+
+                    // ✅ Convertit en nombre (évite NaN si string)
+                    const temperature = temp !== undefined ? Number(temp) : null;
+                    const humidite = hum !== undefined ? Number(hum) : null;
+
+                    // ✅ Batterie optionnelle
+                    const batterie = donnees.batteryPct !== undefined ? Number(donnees.batteryPct) : 100;
+
+                    stations[deviceId] = {
                     lieu: LIEUX[deviceId] || deviceId,
-                    temperature: donnees.tempC,
-                    humidite: donnees.humPct,
-                    batterie: donnees.batteryPct,
+                    temperature,
+                    humidite,
+                    batterie,
                     derniereMAJ: Date.now(),
-                    deviceId: deviceId
+                    deviceId
                 };
-                
-                console.log(`${stations[deviceId].lieu}: ${donnees.tempC}°C`);
+
+                console.log(`${stations[deviceId].lieu}: ${temperature ?? "?"}°C`);
             } catch (error) {
                 console.error("Erreur parsing:", error);
             }
-        }
+        };
     }
 
     // Vérifier si une station est en ligne

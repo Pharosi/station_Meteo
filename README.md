@@ -104,7 +104,7 @@ Exemple de message MQTT :
 
 {
   "device_id": "genders-01",
-  "mode": "sim",
+  "mode": "oui",
   "unit": "C",
   "temp": 22.4,
   "hum": 45.2,
