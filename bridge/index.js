@@ -6,11 +6,16 @@ const MQTT_BROKER = "mqtt://captain.dev0.pandor.cloud:1884";
 const WEBSOCKET_PORT = 8080;
 
 // Définition DEVICE_ID
-const DEVICE_ID = "genders-01";
+const DEVICE_ID = "Mazafakas-01";
 
+<<<<<<< HEAD
 // Convention TP : classroom/<device_id>/telemetry
 const TELEMETRY_TOPIC = `classroom/${DEVICE_ID}/telemetry`;
 const COMMAND_TOPIC = `classroom/${DEVICE_ID}/command`;
+=======
+// Convention TP : <device_id>/telemetry
+const TELEMETRY_TOPIC = `${DEVICE_ID}/telemetry`;
+>>>>>>> 8b455b6 (Test Finaux avec button qui marche dans un sens (X Front -> Material))
 // ==========================================
 
 const clientMQTT = mqtt.connect(MQTT_BROKER, {
