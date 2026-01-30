@@ -13,11 +13,11 @@
         'esp32-06': 'Hetic'
     };
 
-    // Mode d'affichage global (Celsius ou Fahrenheit)
-    let modeAffichage = $state('C'); // 'C' ou 'F'
-
     // État de la connexion WebSocket
     let statutConnexion = $state("déconnecté");
+    
+    // Mode d'affichage global (Celsius ou Fahrenheit)
+    let modeAffichage = $state('C'); // 'C' ou 'F'
     
     // Stockage des données de chaque station 
     let stations = $state({});
@@ -78,7 +78,7 @@
                 };
 
                 console.log(`✅ Station mise à jour: ${stations[deviceId].lieu} - ${temperature ?? "?"}${unit} - ${humidite ?? "?"}%`);
-                console.log("📊 Stations actuelles:", stations);
+                console.log("📊 Stations actuelles:", $state.snapshot(stations));
             } catch (error) {
                 console.error("❌ Erreur parsing:", error);
             }
