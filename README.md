@@ -89,6 +89,13 @@ http://localhost:5173
 
 ## ESP32
 
+### Installation de la librairie DHT22
+
+Dans Arduino IDE, installer via le Library Manager (Sketch → Include Library → Manage Libraries) :
+
+1. **DHT sensor library** by Adafruit
+2. **Adafruit Unified Sensor** (dépendance automatique)
+
 - Ouvrir esp32/station.ino dans Arduino IDE
 - Configurer le Wi-Fi
 - Flasher l’ESP32
@@ -108,7 +115,6 @@ Exemple de message MQTT :
   "unit": "C",
   "temp": 22.4,
   "hum": 45.2,
-  "ts": 1769698000
 }
 
 ---
@@ -117,7 +123,13 @@ Exemple de message MQTT :
 
 Le dossier docs/ contient :
 
-- captures TinkerCAD
+Librairie utilisé pour le projet : https://github.com/adafruit/DHT-sensor-library/blob/master/DHT.h
+
+
+## Voici le schémas exemple pour simuler la récupération des températures avec les LEDS (Switch vers Fahrenheit ou vers Celcius) : 
+
+<img width="514" height="609" alt="schemas-capteur-DHT22" src="https://github.com/user-attachments/assets/59cc6bfc-5fc4-4593-b5ef-3cf74c0763f1" />
+
 - photos du montage réel
 - schéma de câblage
 
