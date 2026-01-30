@@ -2,7 +2,6 @@
     const URL_WEBSOCKET = "ws://localhost:8080";
     const TIMEOUT_OFFLINE = 60000; // 60 secondes sans données
     
-    // Mapping deviceId 
     const LIEUX = {
         'genders-01': 'Station Météo DHT22',
         'esp32-01': 'Paris',
@@ -13,20 +12,20 @@
         'esp32-06': 'Hetic'
     };
 
-    // État de la connexion WebSocket
     let statutConnexion = $state("déconnecté");
     
-    // Mode d'affichage global (Celsius ou Fahrenheit)
     let modeAffichage = $state('C'); // 'C' ou 'F'
     
-    // Stockage des données de chaque station 
     let stations = $state({});
+    
+    let wsConnection = null;
     
     // Connexion au WebSocket
     function connecter() {
         statutConnexion = "connexion...";
 
         const ws = new WebSocket(URL_WEBSOCKET);
+        wsConnection = ws;
 
         ws.onopen = () => {
             statutConnexion = "connecté";
@@ -39,31 +38,30 @@
 
         ws.onclose = () => {
             statutConnexion = "déconnecté";
-            // Tenter de reconnecter après 3 secondes
             setTimeout(connecter, 3000);
         }
 
         ws.onmessage = (event) => {
             try {
                     const message = JSON.parse(event.data);
-                    console.log("📨 Message WebSocket reçu:", message);
+                    console.log("Message WebSocket reçu:", message);
 
                     const deviceId = message.deviceId ?? message.data?.device_id ?? "unknown";
                     const donnees = message.data ?? {};
 
-                    // ✅ Supporte tempC OU temp
                     const temp = donnees.tempC ?? donnees.temp;
                     const hum = donnees.humPct ?? donnees.hum;
 
-                    // ✅ Convertit en nombre (évite NaN si string)
                     const temperature = temp !== undefined ? Number(temp) : null;
                     const humidite = hum !== undefined ? Number(hum) : null;
 
-                    // ✅ Récupère l'unité et le mode
                     const unit = donnees.unit ?? "°C";
                     const mode = donnees.mode ?? "C";
 
-                    // ✅ Batterie optionnelle
+                    if (mode) {
+                        modeAffichage = mode;
+                    }
+
                     const batterie = donnees.batteryPct !== undefined ? Number(donnees.batteryPct) : 100;
 
                     stations[deviceId] = {
@@ -77,21 +75,19 @@
                     deviceId
                 };
 
-                console.log(`✅ Station mise à jour: ${stations[deviceId].lieu} - ${temperature ?? "?"}${unit} - ${humidite ?? "?"}%`);
-                console.log("📊 Stations actuelles:", $state.snapshot(stations));
+                console.log(`Station mise à jour: ${stations[deviceId].lieu} - ${temperature ?? "?"}${unit} - ${humidite ?? "?"}%`);
+                console.log("Stations actuelles:", $state.snapshot(stations));
             } catch (error) {
-                console.error("❌ Erreur parsing:", error);
+                console.error("Erreur parsing:", error);
             }
         };
     }
 
-    // Vérifier si une station est en ligne
     function estEnLigne(station) {
         if (!station || !station.derniereMAJ) return false;
         return (Date.now() - station.derniereMAJ) < TIMEOUT_OFFLINE;
     }
 
-    // Calculer la moyenne de température
     function moyenneTemperature() {
         const stationsEnLigne = Object.values(stations).filter(estEnLigne);
         if (stationsEnLigne.length === 0) return null;
@@ -101,7 +97,6 @@
         return convertirTemp(moyenneC);
     }
 
-    // Calculer la moyenne d'humidité
     function moyenneHumidite() {
         const stationsEnLigne = Object.values(stations).filter(estEnLigne);
         if (stationsEnLigne.length === 0) return null;
@@ -110,12 +105,10 @@
         return (somme / stationsEnLigne.length).toFixed(1);
     }
 
-    // Obtenir l'unité actuelle (depuis la première station en ligne)
     function getUniteActuelle() {
         return modeAffichage === 'C' ? '°C' : '°F';
     }
 
-    // Convertir la température selon le mode d'affichage
     function convertirTemp(tempC) {
         if (tempC === null || tempC === undefined) return null;
         if (modeAffichage === 'F') {
@@ -124,9 +117,21 @@
         return Number(tempC).toFixed(1);
     }
 
-    // Basculer entre Celsius et Fahrenheit
     function toggleMode() {
-        modeAffichage = modeAffichage === 'C' ? 'F' : 'C';
+        const nouveauMode = modeAffichage === 'C' ? 'F' : 'C';
+        modeAffichage = nouveauMode;
+        
+        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+            const commande = {
+                type: "command",
+                command: "changeMode",
+                mode: nouveauMode
+            };
+            wsConnection.send(JSON.stringify(commande));
+            console.log(`Commande envoyée: changement de mode vers ${nouveauMode}`);
+        } else {
+            console.warn("WebSocket non connecté, impossible d'envoyer la commande");
+        }
     }
 
     function classeBatterie(pct) {
@@ -208,13 +213,6 @@
                         </div>
                     </div>
                     
-                    <div class="mesure">
-                        <span class="icone {classeBatterie(station.batterie)}">🔋</span>
-                        <div>
-                            <div class="label">Batterie</div>
-                            <div class="valeur">{station.batterie ?? '--'}%</div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="pied">
