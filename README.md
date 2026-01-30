@@ -129,10 +129,10 @@ Librairie utilisé pour le projet : https://github.com/adafruit/DHT-sensor-libra
 ---
 
 # 👥 Équipe
-Raphael Paes
-Kelian Halleray
-Ian N'Da
-Owen Lambert
-Modestin Hounga
+Raphael Paes (Liaisons du front avec l'ESP32 via MQTT)
+Kelian Halleray (Création du Schémas tinkercad , implémentation du C++ pour la connexion avec les leds et le bouton)
+Ian N'Da (Implémentation du C++ pour la liaison wifi avec l'ESP32)
+Owen Lambert (Partie Hardware)
+Modestin Hounga (Liaison du front avec l'ESP32 via MQTT)
 
 Projet pédagogique — HETIC WEB3
